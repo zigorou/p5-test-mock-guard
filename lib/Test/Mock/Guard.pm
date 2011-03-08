@@ -6,7 +6,7 @@ use warnings;
 use Exporter qw(import);
 use Class::Load qw(load_class);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our @EXPORT_OK = qw(mock_guard);
 
 sub mock_guard {
