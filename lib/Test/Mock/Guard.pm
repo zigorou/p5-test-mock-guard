@@ -29,7 +29,7 @@ sub new {
               : sub { $method_defs->{$method_name} };
             $restore->{$class_name}{$method_name} =
               $class_name->can($method_name);
-	    no strict 'refs';
+            no strict 'refs';
             *{"$class_name\::$method_name"} = $mocked_method;
         }
     }
@@ -40,8 +40,8 @@ sub DESTROY {
     my $self = shift;
     no warnings 'redefine';
     while ( my ( $class_name, $method_defs ) = each %{$self->{restore}} ) {
-	for my $method_name ( keys %$method_defs ) {
-	    no strict 'refs';
+        for my $method_name ( keys %$method_defs ) {
+            no strict 'refs';
             *{"$class_name\::$method_name"} = $method_defs->{$method_name};
         }
     }
