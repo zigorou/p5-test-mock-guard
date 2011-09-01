@@ -17,7 +17,6 @@ sub mock_guard {
 sub new {
     my ( $class, %class_defs ) = @_;
     my $restore = +{};
-    no warnings 'redefine';
     for my $class_name ( keys %class_defs ) {
         load_class $class_name;
         $restore->{$class_name} = +{};
@@ -30,6 +29,7 @@ sub new {
             $restore->{$class_name}{$method_name} =
               $class_name->can($method_name);
             no strict 'refs';
+            no warnings 'redefine';
             *{"$class_name\::$method_name"} = $mocked_method;
         }
     }
@@ -38,11 +38,12 @@ sub new {
 
 sub DESTROY {
     my $self = shift;
-    no warnings 'redefine';
     while ( my ( $class_name, $method_defs ) = each %{$self->{restore}} ) {
         for my $method_name ( keys %$method_defs ) {
             no strict 'refs';
-            *{"$class_name\::$method_name"} = $method_defs->{$method_name};
+            no warnings 'redefine';
+            *{"$class_name\::$method_name"} = $method_defs->{$method_name}
+                || *{"$class_name\::$method_name is unregistered"}; # black magic!
         }
     }
 }
