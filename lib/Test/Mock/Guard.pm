@@ -5,27 +5,42 @@ use warnings;
 
 use Exporter qw(import);
 use Class::Load qw(load_class);
+use Scalar::Util qw(blessed refaddr);
 use List::Util qw(max);
+use Carp qw(croak);
 
 our $VERSION = '0.02';
 our @EXPORT_OK = qw(mock_guard);
 
 sub mock_guard {
-    my %class_defs = @_;
-    return Test::Mock::Guard->new( %class_defs );
+    return Test::Mock::Guard->new(@_);
 }
 
 my $stash = +{};
 sub new {
-    my ( $class, %class_defs ) = @_;
+    my ($class, @args) = @_;
+    croak 'must be specified key-value pair' unless @args && @args % 2 == 0;
     my $restore = +{};
-    for my $class_name ( keys %class_defs ) {
+    while (@args) {
+        my ($class_name, $method_defs) = splice @args, 0, 2;
+        croak 'Usage: mock_guard($class_or_objct, $methods_hashref' unless
+            defined $class_name && ref $method_defs eq 'HASH';
+
+        # object section
+        if (my $klass = blessed +$class_name) {
+            my $refaddr = refaddr +$class_name;
+            my $guard = Test::Mock::Guard::Instance->new($class_name, $method_defs);
+            $restore->{"$klass#$refaddr"} = $guard;
+            next;
+        }
+
+        # Class::Name section
         load_class $class_name;
         $stash->{$class_name} ||= +{};
         $restore->{$class_name} = +{};
-        my $method_defs = $class_defs{$class_name};
-        for my $method_name ( keys %$method_defs ) {
-            _stash($class_name, $method_name, $restore);
+
+        for my $method_name (keys %$method_defs) {
+            $class->_stash($class_name, $method_name, $restore);
             my $mocked_method = ref $method_defs->{$method_name} eq 'CODE'
                 ? $method_defs->{$method_name}
                 : sub { $method_defs->{$method_name} };
@@ -38,7 +53,7 @@ sub new {
 }
 
 sub _stash {
-    my ($class_name, $method_name, $restore) = @_;
+    my ($class, $class_name, $method_name, $restore) = @_;
     $stash->{$class_name}{$method_name} ||= {
         counter      => 0,
         restore      => +{},
@@ -51,11 +66,11 @@ sub _stash {
 
 sub DESTROY {
     my $self = shift;
-    while ( my ( $class_name, $method_defs ) = each %{$self->{restore}} ) {
-        for my $method_name ( keys %$method_defs ) {
+    while (my ($class_name, $method_defs) = each %{$self->{restore}}) {
+        for my $method_name (keys %$method_defs) {
             my $stuff = $stash->{$class_name}{$method_name};
             my $index = $method_defs->{$method_name};
-            if ($index < max keys %{$stuff->{restore}}) {
+            if ($index < (max(keys %{$stuff->{restore}}) || 0)) {
                 $stuff->{delete_flags}{$index} = 1; # fix: destraction problem
             }
             else {
@@ -79,6 +94,61 @@ sub DESTROY {
             }
         }
     }
+}
+
+# taken from cho45's code
+package
+    Test::Mock::Guard::Instance;
+
+use Scalar::Util qw(blessed refaddr);
+
+my $mocked = {};
+sub new {
+	my ($class, $object, $methods) = @_;
+	my $klass   = blessed($object);
+	my $refaddr = refaddr($object);
+
+	$mocked->{$klass}->{_mocked} ||= {};
+	for my $method (keys %$methods) {
+		unless ($mocked->{$klass}->{_mocked}->{$method}) {
+			$mocked->{$klass}->{_mocked}->{$method} = $klass->can($method);
+			no strict 'refs';
+			no warnings 'redefine';
+			*{"$klass\::$method"} = sub { _mocked($method, @_) };
+		}
+	}
+
+	$mocked->{$klass}->{$refaddr} = $methods;
+	bless +{ object => $object }, $class;
+}
+
+sub _mocked {
+	my ($method, $object, @rest) = @_;
+	my $klass   = blessed($object);
+	my $refaddr = refaddr($object);
+	if (exists $mocked->{$klass}->{$refaddr} && exists $mocked->{$klass}->{$refaddr}->{$method}) {
+		my $val = $mocked->{$klass}->{$refaddr}->{$method};
+		ref($val) eq 'CODE' ? $val->($object, @rest) : $val;
+	} else {
+		$mocked->{$klass}->{_mocked}->{$method}->($object, @rest);
+	}
+}
+
+sub DESTROY {
+	my ($self) = @_;
+	my $object  = $self->{object};
+	my $klass   = blessed($object);
+	my $refaddr = refaddr($object);
+	delete $mocked->{$klass}->{$refaddr};
+
+	unless (keys %{ $mocked->{$klass} } == 1) {
+		my $mocked = delete $mocked->{$klass}->{_mocked};
+		for my $method (keys %$mocked) {
+			no strict 'refs';
+			no warnings 'redefine';
+			*{"$klass\::$method"} = $mocked->{$method};
+		}
+	}
 }
 
 1;
