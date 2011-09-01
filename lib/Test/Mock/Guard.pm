@@ -5,6 +5,7 @@ use warnings;
 
 use Exporter qw(import);
 use Class::Load qw(load_class);
+use List::Util qw(max);
 
 our $VERSION = '0.02';
 our @EXPORT_OK = qw(mock_guard);
@@ -14,20 +15,20 @@ sub mock_guard {
     return Test::Mock::Guard->new( %class_defs );
 }
 
+my $stash = +{};
 sub new {
     my ( $class, %class_defs ) = @_;
     my $restore = +{};
     for my $class_name ( keys %class_defs ) {
         load_class $class_name;
+        $stash->{$class_name} ||= +{};
         $restore->{$class_name} = +{};
         my $method_defs = $class_defs{$class_name};
         for my $method_name ( keys %$method_defs ) {
-            my $mocked_method =
-              ref $method_defs->{$method_name} eq 'CODE'
-              ? $method_defs->{$method_name}
-              : sub { $method_defs->{$method_name} };
-            $restore->{$class_name}{$method_name} =
-              $class_name->can($method_name);
+            _stash($class_name, $method_name, $restore);
+            my $mocked_method = ref $method_defs->{$method_name} eq 'CODE'
+                ? $method_defs->{$method_name}
+                : sub { $method_defs->{$method_name} };
             no strict 'refs';
             no warnings 'redefine';
             *{"$class_name\::$method_name"} = $mocked_method;
@@ -36,14 +37,46 @@ sub new {
     return bless +{ restore => $restore } => $class;
 }
 
+sub _stash {
+    my ($class_name, $method_name, $restore) = @_;
+    $stash->{$class_name}{$method_name} ||= {
+        counter      => 0,
+        restore      => +{},
+        delete_flags => +{},
+    };
+    my $index = ++$stash->{$class_name}{$method_name}{counter};
+    $stash->{$class_name}{$method_name}{restore}{$index} = $class_name->can($method_name);
+    $restore->{$class_name}{$method_name} = $index;
+}
+
 sub DESTROY {
     my $self = shift;
     while ( my ( $class_name, $method_defs ) = each %{$self->{restore}} ) {
         for my $method_name ( keys %$method_defs ) {
-            no strict 'refs';
-            no warnings 'redefine';
-            *{"$class_name\::$method_name"} = $method_defs->{$method_name}
-                || *{"$class_name\::$method_name is unregistered"}; # black magic!
+            my $stuff = $stash->{$class_name}{$method_name};
+            my $index = $method_defs->{$method_name};
+            if ($index < max keys %{$stuff->{restore}}) {
+                $stuff->{delete_flags}{$index} = 1; # fix: destraction problem
+            }
+            else {
+                my $orig_method = delete $stuff->{restore}{$index}; # current restore method
+
+                # restored old mocked method
+                for my $index (sort keys %{$stuff->{delete_flags}}) {
+                    delete $stuff->{delete_flags}{$index};
+                    $orig_method = delete $stuff->{restore}{$index};
+                }
+
+                # cleanup
+                unless (keys %{$stuff->{restore}}) {
+                    delete $stash->{$class_name}{$method_name};
+                }
+
+                no strict 'refs';
+                no warnings 'redefine';
+                *{"$class_name\::$method_name"} = $orig_method
+                    || *{"$class_name\::$method_name is unregistered"}; # black magic!
+            }
         }
     }
 }

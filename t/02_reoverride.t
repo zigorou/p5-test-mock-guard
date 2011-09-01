@@ -7,21 +7,71 @@ package Some::Class;
 
 sub new { bless {} => shift }
 sub foo { "foo" }
-sub bar { 1; }
 
 package main;
 
-for (1..3) {
-    {
-        my $guard = mock_guard( 'Some::Class', +{ foo => sub { "bar" }, bar => 10 } );
-        my $obj = Some::Class->new;
-        is( $obj->foo, "bar" );
-        is( $obj->bar, 10 );
-    }
+my $obj = Some::Class->new;
+is $obj->foo, 'foo', 'original';
 
-    my $obj = Some::Class->new;
-    is( $obj->foo, "foo" );
-    is( $obj->bar, 1 );
+{
+    my $guard1 = mock_guard('Some::Class' => +{ foo => sub { 'xxx' } });
+    is $obj->foo, 'xxx', 'guard 1';
+
+    my $guard2 = mock_guard('Some::Class' => +{ foo => sub { 'yyy' } });
+    is $obj->foo, 'yyy', 'guard 2';
+
+    undef $guard2;
 }
+
+is $obj->foo, 'foo', 'restored';
+
+{
+    my $guard1 = mock_guard('Some::Class' => +{ foo => sub { 'xxx' } });
+    is $obj->foo, 'xxx', 'guard 1';
+
+    my $guard2 = mock_guard('Some::Class' => +{ foo => sub { 'yyy' } });
+    is $obj->foo, 'yyy', 'guard 2';
+
+    undef $guard2;
+
+    is +$obj->foo, 'xxx', 'guard 1 restored';
+}
+
+is $obj->foo, 'foo', 'restored';
+
+{
+    my $guard1 = mock_guard('Some::Class' => +{ foo => sub { 'xxx' } });
+    is $obj->foo, 'xxx', 'guard 1';
+
+    {
+        my $guard2 = mock_guard('Some::Class' => +{ foo => sub { 'yyy' } });
+        is $obj->foo, 'yyy', 'guard 2';
+
+        my $guard3 = mock_guard('Some::Class' => +{ foo => sub { 'zzz' } });
+        is $obj->foo, 'zzz', 'guard 3';
+
+        undef $guard2;
+
+        is +$obj->foo, 'zzz', 'guard 1 restored';
+    }
+}
+
+is $obj->foo, 'foo', 'restored';
+
+{
+    my $guard1 = mock_guard('Some::Class' => +{ foo => sub { 'xxx' } });
+    is $obj->foo, 'xxx', 'guard 1';
+
+    {
+        my $guard2 = mock_guard('Some::Class' => +{ foo => sub { 'yyy' } });
+        is $obj->foo, 'yyy', 'guard 2';
+
+        undef $guard1;
+
+        is +$obj->foo, 'yyy', 'guard 1 restored';
+    }
+}
+
+is $obj->foo, 'foo', 'restored';
 
 done_testing;
