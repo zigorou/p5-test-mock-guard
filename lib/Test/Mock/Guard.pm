@@ -130,29 +130,29 @@ use Scalar::Util qw(blessed refaddr);
 
 my $mocked = {};
 sub new {
-	my ($class, $object, $methods) = @_;
-	my $klass   = blessed($object);
-	my $refaddr = refaddr($object);
+    my ($class, $object, $methods) = @_;
+    my $klass   = blessed($object);
+    my $refaddr = refaddr($object);
 
-	$mocked->{$klass}->{_mocked} ||= {};
-	for my $method (keys %$methods) {
-		unless ($mocked->{$klass}->{_mocked}->{$method}) {
-			$mocked->{$klass}->{_mocked}->{$method} = $klass->can($method);
-			no strict 'refs';
-			no warnings 'redefine';
-			*{"$klass\::$method"} = sub { _mocked($method, @_) };
-		}
-	}
+    $mocked->{$klass}->{_mocked} ||= {};
+    for my $method (keys %$methods) {
+        unless ($mocked->{$klass}->{_mocked}->{$method}) {
+            $mocked->{$klass}->{_mocked}->{$method} = $klass->can($method);
+            no strict 'refs';
+            no warnings 'redefine';
+            *{"$klass\::$method"} = sub { _mocked($method, @_) };
+        }
+    }
 
-	$mocked->{$klass}->{$refaddr} = $methods;
-	bless +{ object => $object }, $class;
+    $mocked->{$klass}->{$refaddr} = $methods;
+    bless +{ object => $object }, $class;
 }
 
 sub reset {
     my ($self, $method) = @_;
-	my $object  = $self->{object};
-	my $klass   = blessed($object);
-	my $refaddr = refaddr($object);
+    my $object  = $self->{object};
+    my $klass   = blessed($object);
+    my $refaddr = refaddr($object);
 
     if (exists $mocked->{$klass}{$refaddr} && exists $mocked->{$klass}{$refaddr}{$method}) {
         delete $mocked->{$klass}{$refaddr}{$method};
@@ -160,32 +160,32 @@ sub reset {
 }
 
 sub _mocked {
-	my ($method, $object, @rest) = @_;
-	my $klass   = blessed($object);
-	my $refaddr = refaddr($object);
-	if (exists $mocked->{$klass}->{$refaddr} && exists $mocked->{$klass}->{$refaddr}->{$method}) {
-		my $val = $mocked->{$klass}->{$refaddr}->{$method};
-		ref($val) eq 'CODE' ? $val->($object, @rest) : $val;
-	} else {
-		$mocked->{$klass}->{_mocked}->{$method}->($object, @rest);
-	}
+    my ($method, $object, @rest) = @_;
+    my $klass   = blessed($object);
+    my $refaddr = refaddr($object);
+    if (exists $mocked->{$klass}->{$refaddr} && exists $mocked->{$klass}->{$refaddr}->{$method}) {
+        my $val = $mocked->{$klass}->{$refaddr}->{$method};
+        ref($val) eq 'CODE' ? $val->($object, @rest) : $val;
+    } else {
+        $mocked->{$klass}->{_mocked}->{$method}->($object, @rest);
+    }
 }
 
 sub DESTROY {
-	my ($self) = @_;
-	my $object  = $self->{object};
-	my $klass   = blessed($object);
-	my $refaddr = refaddr($object);
-	delete $mocked->{$klass}->{$refaddr};
+    my ($self) = @_;
+    my $object  = $self->{object};
+    my $klass   = blessed($object);
+    my $refaddr = refaddr($object);
+    delete $mocked->{$klass}->{$refaddr};
 
-	unless (keys %{ $mocked->{$klass} } == 1) {
-		my $mocked = delete $mocked->{$klass}->{_mocked};
-		for my $method (keys %$mocked) {
-			no strict 'refs';
-			no warnings 'redefine';
-			*{"$klass\::$method"} = $mocked->{$method};
-		}
-	}
+    unless (keys %{ $mocked->{$klass} } == 1) {
+        my $mocked = delete $mocked->{$klass}->{_mocked};
+        for my $method (keys %$mocked) {
+            no strict 'refs';
+            no warnings 'redefine';
+            *{"$klass\::$method"} = $mocked->{$method};
+        }
+    }
 }
 
 1;
