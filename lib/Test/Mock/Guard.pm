@@ -77,7 +77,7 @@ sub DESTROY {
                 my $orig_method = delete $stuff->{restore}{$index}; # current restore method
 
                 # restored old mocked method
-                for my $index (sort keys %{$stuff->{delete_flags}}) {
+                for my $index (sort { $b <=> $a } keys %{$stuff->{delete_flags}}) {
                     delete $stuff->{delete_flags}{$index};
                     $orig_method = delete $stuff->{restore}{$index};
                 }
