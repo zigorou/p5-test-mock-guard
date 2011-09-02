@@ -3,6 +3,13 @@ use warnings;
 use Test::More;
 use Test::Mock::Guard qw(mock_guard);
 
+package Some::Class;
+
+sub new { bless {}, shift }
+sub foo { 'foo' }
+
+package main;
+
 {
     note 'empty';
     local $@;
@@ -36,6 +43,38 @@ use Test::Mock::Guard qw(mock_guard);
     local $@;
     eval { mock_guard('Foo::Bar', []) };
     like $@, qr/Usage: mock_guard/;
+}
+
+{
+    note 'empty for reset()';
+    local $@;
+    my $guard = mock_guard('Some::Class' => { foo => 'bar' });
+    eval { $guard->reset() };
+    like $@, qr/must be specified key-value pair/;
+}
+
+{
+    note 'not pair for reset()';
+    local $@;
+    my $guard = mock_guard('Some::Class' => { foo => 'bar' });
+    eval { $guard->reset('AAA') };
+    like $@, qr/must be specified key-value pair/;
+}
+
+{
+    note 'class name undefined for reset()';
+    local $@;
+    my $guard = mock_guard('Some::Class' => { foo => 'bar' });
+    eval { $guard->reset(undef, []) };
+    like $@, qr/Usage: \$guard->reset\(/;
+}
+
+{
+    note 'methods s note arrayref reset()';
+    local $@;
+    my $guard = mock_guard('Some::Class' => { foo => 'bar' });
+    eval { $guard->reset('Some::Class', {}) };
+    like $@, qr/Usage: \$guard->reset\(/;
 }
 
 done_testing;

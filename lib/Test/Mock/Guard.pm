@@ -21,16 +21,17 @@ sub new {
     my ($class, @args) = @_;
     croak 'must be specified key-value pair' unless @args && @args % 2 == 0;
     my $restore = +{};
+    my $object  = +{};
     while (@args) {
         my ($class_name, $method_defs) = splice @args, 0, 2;
-        croak 'Usage: mock_guard($class_or_objct, $methods_hashref' unless
-            defined $class_name && ref $method_defs eq 'HASH';
+        croak 'Usage: mock_guard($class_or_objct, $methods_hashref)'
+            unless defined $class_name && ref $method_defs eq 'HASH';
 
         # object section
         if (my $klass = blessed +$class_name) {
             my $refaddr = refaddr +$class_name;
             my $guard = Test::Mock::Guard::Instance->new($class_name, $method_defs);
-            $restore->{"$klass#$refaddr"} = $guard;
+            $object->{"$klass#$refaddr"} = $guard;
             next;
         }
 
@@ -49,7 +50,26 @@ sub new {
             *{"$class_name\::$method_name"} = $mocked_method;
         }
     }
-    return bless +{ restore => $restore } => $class;
+    return bless +{ restore => $restore, object => $object } => $class;
+}
+
+sub reset {
+    my ($self, @args) = @_;
+    croak 'must be specified key-value pair' unless @args && @args % 2 == 0;
+    while (@args) {
+        my ($class_name, $methods) = splice @args, 0, 2;
+        croak 'Usage: $guard->reset($class_or_objct, $methods_arrayref)'
+            unless defined $class_name && ref $methods eq 'ARRAY';
+        for my $method (@$methods) {
+            if (my $klass = blessed +$class_name) {
+                my $refaddr = refaddr +$class_name;
+                my $restore = $self->{object}{"$klass#$refaddr"} || next;
+                $restore->reset($method);
+                next;
+            }
+            $self->_restore($class_name, $method);
+        }
+    }
 }
 
 sub _stash {
@@ -64,34 +84,40 @@ sub _stash {
     $restore->{$class_name}{$method_name} = $index;
 }
 
+sub _restore {
+    my ($self, $class_name, $method_name) = @_;
+
+    my $index = delete $self->{restore}{$class_name}{$method_name} || return;
+    my $stuff = $stash->{$class_name}{$method_name};
+    if ($index < (max(keys %{$stuff->{restore}}) || 0)) {
+        $stuff->{delete_flags}{$index} = 1; # fix: destraction problem
+    }
+    else {
+        my $orig_method = delete $stuff->{restore}{$index}; # current restore method
+
+        # restored old mocked method
+        for my $index (sort { $b <=> $a } keys %{$stuff->{delete_flags}}) {
+            delete $stuff->{delete_flags}{$index};
+            $orig_method = delete $stuff->{restore}{$index};
+        }
+
+        # cleanup
+        unless (keys %{$stuff->{restore}}) {
+            delete $stash->{$class_name}{$method_name};
+        }
+
+        no strict 'refs';
+        no warnings 'redefine';
+        *{"$class_name\::$method_name"} = $orig_method
+            || *{"$class_name\::$method_name is unregistered"}; # black magic!
+    }
+}
+
 sub DESTROY {
     my $self = shift;
     while (my ($class_name, $method_defs) = each %{$self->{restore}}) {
         for my $method_name (keys %$method_defs) {
-            my $stuff = $stash->{$class_name}{$method_name};
-            my $index = $method_defs->{$method_name};
-            if ($index < (max(keys %{$stuff->{restore}}) || 0)) {
-                $stuff->{delete_flags}{$index} = 1; # fix: destraction problem
-            }
-            else {
-                my $orig_method = delete $stuff->{restore}{$index}; # current restore method
-
-                # restored old mocked method
-                for my $index (sort { $b <=> $a } keys %{$stuff->{delete_flags}}) {
-                    delete $stuff->{delete_flags}{$index};
-                    $orig_method = delete $stuff->{restore}{$index};
-                }
-
-                # cleanup
-                unless (keys %{$stuff->{restore}}) {
-                    delete $stash->{$class_name}{$method_name};
-                }
-
-                no strict 'refs';
-                no warnings 'redefine';
-                *{"$class_name\::$method_name"} = $orig_method
-                    || *{"$class_name\::$method_name is unregistered"}; # black magic!
-            }
+            $self->_restore($class_name, $method_name);
         }
     }
 }
@@ -120,6 +146,17 @@ sub new {
 
 	$mocked->{$klass}->{$refaddr} = $methods;
 	bless +{ object => $object }, $class;
+}
+
+sub reset {
+    my ($self, $method) = @_;
+	my $object  = $self->{object};
+	my $klass   = blessed($object);
+	my $refaddr = refaddr($object);
+
+    if (exists $mocked->{$klass}{$refaddr} && exists $mocked->{$klass}{$refaddr}{$method}) {
+        delete $mocked->{$klass}{$refaddr}{$method};
+    }
 }
 
 sub _mocked {
