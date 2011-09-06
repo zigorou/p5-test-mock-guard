@@ -259,6 +259,12 @@ Internal use only.
 
 Toru Yamaguchi E<lt>zigorou@cpan.orgE<gt>
 
+Yuji Shimada E<lt>xaicron at cpan.orgE<gt>
+
+=head1 THANKS TO
+
+cho45
+
 =head1 SEE ALSO
 
 =head1 LICENSE
