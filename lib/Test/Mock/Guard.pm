@@ -10,7 +10,7 @@ use List::Util qw(max);
 use Carp qw(croak);
 
 our $VERSION = '0.02';
-our @EXPORT_OK = qw(mock_guard);
+our @EXPORT = qw(mock_guard);
 
 sub mock_guard {
     return Test::Mock::Guard->new(@_);
@@ -227,27 +227,58 @@ Test::Mock::Guard is mock test library using RAII.
 
 =head1 EXPORT FUNCTION
 
-=head2 mock_guard( %class_defs )
+=head2 mock_guard( @class_defs )
 
-%class_defs are following format.
+@class_defs are following format.
 
 =over
 
 =item key
 
-Specify class name as mock
+Specify class name or object as mock.
 
 =item value
 
 Hash reference. It's key as method name, It's value is code reference or value.
+
 If the value is code reference, then call code reference and return the result.
+
 If the value is value, then return the value directly.
 
 =back
 
+You can change to only specific object. (This was brought about by cho45)
+
+It's like this:
+
+  use Test::More;
+  use Test::Mock::Guard qw(mock_guard);
+
+  package Some::Class;
+
+  sub new { bless {} => shift }
+  sub foo { "foo" }
+
+  package main;
+
+  my $obj1 = Some::Class->new;
+  my $obj2 = Some::Class->new;
+
+  {
+      my $obj2 = Some::Class->new;
+      my $guard = mock_guard( $obj2, +{ foo => sub { "bar" } } );
+      is ($obj1->foo, "foo", "obj1 has not changed" );
+      is( $obj2->foo, "bar", "obj2 is mocked" );
+  }
+
+  is( $obj1->foo, "foo", "obj1" );
+  is( $obj2->foo, "foo", "obj2" );
+
+  done_testing;
+
 =head1 METHODS
 
-=head2 new( %class_defs )
+=head2 new( @class_defs )
 
 See L</mock_guard> definition.
 
@@ -266,6 +297,8 @@ Yuji Shimada E<lt>xaicron at cpan.orgE<gt>
 cho45
 
 =head1 SEE ALSO
+
+L<Test::MockObject>
 
 =head1 LICENSE
 
