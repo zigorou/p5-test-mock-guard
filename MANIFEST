@@ -1,3 +1,4 @@
+.gitignore
 Changes
 inc/Module/Install.pm
 inc/Module/Install/AuthorTests.pm
@@ -15,9 +16,17 @@ lib/Test/Mock/Guard.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
+MYMETA.json
+MYMETA.yml
 README
 t/00_compile.t
 t/01_basic.t
+t/02_reoverride.t
+t/03_unregistered.t
+t/04_multi_class.t
+t/05_object.t
+t/06_mixied.t
+t/07_reset.t
 xt/01_podspell.t
 xt/02_perlcritic.t
 xt/03_pod.t
