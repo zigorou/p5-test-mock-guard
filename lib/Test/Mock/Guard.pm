@@ -223,7 +223,8 @@ Test::Mock::Guard - Simple mock test library using RAII.
 
 =head1 DESCRIPTION
 
-Test::Mock::Guard is mock test library using RAII.
+Test::Mock::Guard is mock test library using RAII. 
+This module is able to change method behavior by each scope. See SYNOPSIS's sample code.
 
 =head1 EXPORT FUNCTION
 
@@ -239,16 +240,13 @@ Specify class name or object as mock.
 
 =item value
 
-Hash reference. It's key as method name, It's value is code reference or value.
-
-If the value is code reference, then call code reference and return the result.
-
-If the value is value, then return the value directly.
+Hash reference. The key as method name, The value is code reference or value.
+If the value is code reference, it is used as method.
+If the value is value, the method will return the specified value.
 
 =back
 
-You can change to only specific object. (This was brought about by cho45)
-
+You can change method behavior into specific object. (This feature was provided by cho45)
 It's like this:
 
   use Test::More;
@@ -294,7 +292,7 @@ Yuji Shimada E<lt>xaicron at cpan.orgE<gt>
 
 =head1 THANKS TO
 
-cho45
+cho45 E<lt>cho45@lowreal.netE<gt>
 
 =head1 SEE ALSO
 
