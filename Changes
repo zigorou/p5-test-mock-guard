@@ -1,5 +1,8 @@
 Revision history for Perl extension Test::Mock::Guard
 
+0.04    Thu Sep  8 21:43:15 2011
+        - Remove unary plus operator considering less than perl 5.8.x. (thanks chocolateboy)
+
 0.03    Thu Sep  8 12:21:51 2011
         - improve multiple same class mock guard (thanks xaicron)
         - import Test::Mock::Guard::Instance (thanks cho45)
