@@ -11,7 +11,7 @@ use Scalar::Util qw(blessed refaddr);
 use List::Util qw(max);
 use Carp qw(croak);
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our @EXPORT = qw(mock_guard);
 
 sub mock_guard {
