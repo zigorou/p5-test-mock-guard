@@ -1,4 +1,9 @@
 Revision history for Perl extension Test::Mock::Guard
 
+0.03    Thu Sep  8 12:21:51 2011
+        - improve multiple same class mock guard (thanks xaicron)
+        - import Test::Mock::Guard::Instance (thanks cho45)
+        - add reset() method (thanks xaicron, nekokak)
+
 0.02    Tue Mar  8 20:25:49 2011
         - original version
