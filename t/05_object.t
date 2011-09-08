@@ -14,20 +14,20 @@ package main;
 my $obj1 = Some::Class->new;
 my $obj2 = Some::Class->new;
 {
-	my $guard1 = mock_guard($obj1, +{ foo => sub { "bar" }, bar => 10 } );
-	is $obj1->foo, "bar";
-	is $obj1->bar, 10;
+        my $guard1 = mock_guard($obj1, { foo => sub { "bar" }, bar => 10 } );
+        is $obj1->foo, "bar";
+        is $obj1->bar, 10;
 
-	my $guard2 = mock_guard($obj2, +{ foo => sub { "baz" }, bar => 20 } );
-	is $obj2->foo, "baz";
-	is $obj2->bar, 20;
+        my $guard2 = mock_guard($obj2, { foo => sub { "baz" }, bar => 20 } );
+        is $obj2->foo, "baz";
+        is $obj2->bar, 20;
 
-	is $obj1->foo, "bar";
-	is $obj1->bar, 10;
+        is $obj1->foo, "bar";
+        is $obj1->bar, 10;
 
-	my $another = Some::Class->new;
-	is $another->foo, "foo";
-	is $another->bar, 1;
+        my $another = Some::Class->new;
+        is $another->foo, "foo";
+        is $another->bar, 1;
 }
 
 is $obj1->foo, "foo";

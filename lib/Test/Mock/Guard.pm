@@ -3,6 +3,8 @@ package Test::Mock::Guard;
 use strict;
 use warnings;
 
+use 5.006001;
+
 use Exporter qw(import);
 use Class::Load qw(load_class);
 use Scalar::Util qw(blessed refaddr);
@@ -16,20 +18,20 @@ sub mock_guard {
     return Test::Mock::Guard->new(@_);
 }
 
-my $stash = +{};
+my $stash = {};
 sub new {
     my ($class, @args) = @_;
     croak 'must be specified key-value pair' unless @args && @args % 2 == 0;
-    my $restore = +{};
-    my $object  = +{};
+    my $restore = {};
+    my $object  = {};
     while (@args) {
         my ($class_name, $method_defs) = splice @args, 0, 2;
         croak 'Usage: mock_guard($class_or_objct, $methods_hashref)'
             unless defined $class_name && ref $method_defs eq 'HASH';
 
         # object section
-        if (my $klass = blessed +$class_name) {
-            my $refaddr = refaddr +$class_name;
+        if (my $klass = blessed $class_name) {
+            my $refaddr = refaddr $class_name;
             my $guard = Test::Mock::Guard::Instance->new($class_name, $method_defs);
             $object->{"$klass#$refaddr"} = $guard;
             next;
@@ -37,8 +39,8 @@ sub new {
 
         # Class::Name section
         load_class $class_name;
-        $stash->{$class_name} ||= +{};
-        $restore->{$class_name} = +{};
+        $stash->{$class_name} ||= {};
+        $restore->{$class_name} = {};
 
         for my $method_name (keys %$method_defs) {
             $class->_stash($class_name, $method_name, $restore);
@@ -50,7 +52,7 @@ sub new {
             *{"$class_name\::$method_name"} = $mocked_method;
         }
     }
-    return bless +{ restore => $restore, object => $object } => $class;
+    return bless { restore => $restore, object => $object } => $class;
 }
 
 sub reset {
@@ -61,8 +63,8 @@ sub reset {
         croak 'Usage: $guard->reset($class_or_objct, $methods_arrayref)'
             unless defined $class_name && ref $methods eq 'ARRAY';
         for my $method (@$methods) {
-            if (my $klass = blessed +$class_name) {
-                my $refaddr = refaddr +$class_name;
+            if (my $klass = blessed $class_name) {
+                my $refaddr = refaddr $class_name;
                 my $restore = $self->{object}{"$klass#$refaddr"} || next;
                 $restore->reset($method);
                 next;
@@ -76,8 +78,8 @@ sub _stash {
     my ($class, $class_name, $method_name, $restore) = @_;
     $stash->{$class_name}{$method_name} ||= {
         counter      => 0,
-        restore      => +{},
-        delete_flags => +{},
+        restore      => {},
+        delete_flags => {},
     };
     my $index = ++$stash->{$class_name}{$method_name}{counter};
     $stash->{$class_name}{$method_name}{restore}{$index} = $class_name->can($method_name);
@@ -145,7 +147,7 @@ sub new {
     }
 
     $mocked->{$klass}->{$refaddr} = $methods;
-    bless +{ object => $object }, $class;
+    bless { object => $object }, $class;
 }
 
 sub reset {
@@ -189,6 +191,7 @@ sub DESTROY {
 }
 
 1;
+
 __END__
 
 =head1 NAME
@@ -209,7 +212,7 @@ Test::Mock::Guard - Simple mock test library using RAII.
   package main;
 
   {
-      my $guard = mock_guard( 'Some::Class', +{ foo => sub { "bar" }, bar => 10 } );
+      my $guard = mock_guard( 'Some::Class', { foo => sub { "bar" }, bar => 10 } );
       my $obj = Some::Class->new;
       is( $obj->foo, "bar" );
       is( $obj->bar, 10 );
@@ -230,24 +233,23 @@ This module is able to change method behavior by each scope. See SYNOPSIS's samp
 
 =head2 mock_guard( @class_defs )
 
-@class_defs are following format.
+@class_defs have the following format.
 
 =over
 
 =item key
 
-Specify class name or object as mock.
+Class name or object to mock.
 
 =item value
 
-Hash reference. The key as method name, The value is code reference or value.
-If the value is code reference, it is used as method.
-If the value is value, the method will return the specified value.
+Hash reference. Keys are method names; values are code references or scalars.
+If the value is code reference, it is used as a method.
+If the value is a scalar, the method will return the specified value.
 
 =back
 
-You can change method behavior into specific object. (This feature was provided by cho45)
-It's like this:
+You can mock instance methods as well as class methods (this feature was provided by cho45):
 
   use Test::More;
   use Test::Mock::Guard qw(mock_guard);
@@ -264,7 +266,7 @@ It's like this:
 
   {
       my $obj2 = Some::Class->new;
-      my $guard = mock_guard( $obj2, +{ foo => sub { "bar" } } );
+      my $guard = mock_guard( $obj2, { foo => sub { "bar" } } );
       is ($obj1->foo, "foo", "obj1 has not changed" );
       is( $obj2->foo, "bar", "obj2 is mocked" );
   }
@@ -279,10 +281,6 @@ It's like this:
 =head2 new( @class_defs )
 
 See L</mock_guard> definition.
-
-=head2 DESTROY
-
-Internal use only.
 
 =head1 AUTHOR
 
