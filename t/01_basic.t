@@ -13,7 +13,7 @@ package main;
 
 {
     my $guard =
-      mock_guard( 'Some::Class', +{ foo => sub { "bar" }, bar => 10 } );
+      mock_guard( 'Some::Class', { foo => sub { "bar" }, bar => 10 } );
     my $obj = Some::Class->new;
     is( $obj->foo, "bar" );
     is( $obj->bar, 10 );
