@@ -20,11 +20,11 @@ package main;
 
 {
     my $guard = mock_guard(
-        'Some::Class::One', +{
+        'Some::Class::One', {
             foo => sub { "bar" },
             bar => 10,
         },
-        'Some::Class::Two', +{
+        'Some::Class::Two', {
             hoge => sub { "fuga" },
             fuga => 20,
         },

@@ -1,4 +1,8 @@
+use strict;
+use warnings;
+
 use inc::Module::Install;
+
 name 'Test-Mock-Guard';
 all_from 'lib/Test/Mock/Guard.pm';
 
