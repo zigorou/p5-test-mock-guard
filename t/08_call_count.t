@@ -24,7 +24,7 @@ package main;
             is $obj->$name => $count;
         }
 
-        is $guard->called('Some::Class', $name) => $count;
+        is $guard->call_count('Some::Class', $name) => $count;
     }
 }
 
@@ -40,7 +40,7 @@ package main;
             is $obj->$name => $count;
         }
 
-        is $guard->called($obj, $name) => $count;
+        is $guard->call_count($obj, $name) => $count;
     }
 }
 

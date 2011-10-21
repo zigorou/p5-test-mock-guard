@@ -58,14 +58,14 @@ sub new {
     return bless { restore => $restore, object => $object } => $class;
 }
 
-sub called {
+sub call_count {
     my ($self, $klass, $method_name) = @_;
 
     if (my $class_name = blessed $klass) {
         # object
         my $refaddr = refaddr $klass;
         my $guard = $self->{object}->{"$class_name#$refaddr"};
-        return $guard->called($method_name);
+        return $guard->call_count($method_name);
     } else {
         # class
         my $class_name = $klass;
@@ -183,7 +183,7 @@ sub reset {
     }
 }
 
-sub called {
+sub call_count {
     my ($self, $method_name) = @_;
     my $class_name = blessed $self->{object};
     my $refaddr    = refaddr $self->{object};
@@ -313,7 +313,7 @@ You can mock instance methods as well as class methods (this feature was provide
 
 See L</mock_guard> definition.
 
-=head2 called( $class_name_or_object, $method_name )
+=head2 call_count( $class_name_or_object, $method_name )
 
 Returns a number of calling of $method_name in $class_name_or_object.
 
