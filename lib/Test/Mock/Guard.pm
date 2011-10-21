@@ -49,10 +49,27 @@ sub new {
                 : sub { $method_defs->{$method_name} };
             no strict 'refs';
             no warnings 'redefine';
-            *{"$class_name\::$method_name"} = $mocked_method;
+            *{"$class_name\::$method_name"} = sub {
+                ++$stash->{$class_name}->{$method_name}->{called_count};
+                &$mocked_method;
+            };
         }
     }
     return bless { restore => $restore, object => $object } => $class;
+}
+
+sub called {
+    my ($self, $klass, $method_name) = @_;
+
+    # object
+    if (my $object = blessed $klass) {
+        return; # TODO: implements
+    }
+
+    # class
+    my $class_name = $klass;
+    return unless exists $stash->{$class_name}->{$method_name};
+    return $stash->{$class_name}->{$method_name}->{called_count};
 }
 
 sub reset {
@@ -80,6 +97,7 @@ sub _stash {
         counter      => 0,
         restore      => {},
         delete_flags => {},
+        called_count => 0,
     };
     my $index = ++$stash->{$class_name}{$method_name}{counter};
     $stash->{$class_name}{$method_name}{restore}{$index} = $class_name->can($method_name);
@@ -226,7 +244,7 @@ Test::Mock::Guard - Simple mock test library using RAII.
 
 =head1 DESCRIPTION
 
-Test::Mock::Guard is mock test library using RAII. 
+Test::Mock::Guard is mock test library using RAII.
 This module is able to change method behavior by each scope. See SYNOPSIS's sample code.
 
 =head1 EXPORT FUNCTION
@@ -281,6 +299,10 @@ You can mock instance methods as well as class methods (this feature was provide
 =head2 new( @class_defs )
 
 See L</mock_guard> definition.
+
+=head2 called( $class_name, $method_name )
+
+Returns a number of calling of $method_name in $class_name.
 
 =head1 AUTHOR
 
