@@ -61,15 +61,17 @@ sub new {
 sub called {
     my ($self, $klass, $method_name) = @_;
 
-    # object
-    if (my $object = blessed $klass) {
-        return; # TODO: implements
+    if (my $class_name = blessed $klass) {
+        # object
+        my $refaddr = refaddr $klass;
+        my $guard = $self->{object}->{"$class_name#$refaddr"};
+        return $guard->called($method_name);
+    } else {
+        # class
+        my $class_name = $klass;
+        return unless exists $stash->{$class_name}->{$method_name};
+        return $stash->{$class_name}->{$method_name}->{called_count};
     }
-
-    # class
-    my $class_name = $klass;
-    return unless exists $stash->{$class_name}->{$method_name};
-    return $stash->{$class_name}->{$method_name}->{called_count};
 }
 
 sub reset {
@@ -149,6 +151,7 @@ package
 use Scalar::Util qw(blessed refaddr);
 
 my $mocked = {};
+my $counts = {};
 sub new {
     my ($class, $object, $methods) = @_;
     my $klass   = blessed($object);
@@ -161,6 +164,7 @@ sub new {
             no strict 'refs';
             no warnings 'redefine';
             *{"$klass\::$method"} = sub { _mocked($method, @_) };
+            $counts->{$klass}->{$refaddr}->{$method} = 0;
         }
     }
 
@@ -179,11 +183,20 @@ sub reset {
     }
 }
 
+sub called {
+    my ($self, $method_name) = @_;
+    my $class_name = blessed $self->{object};
+    my $refaddr    = refaddr $self->{object};
+    return unless exists $counts->{$class_name}->{$refaddr}->{$method_name};
+    return $counts->{$class_name}->{$refaddr}->{$method_name};
+}
+
 sub _mocked {
     my ($method, $object, @rest) = @_;
     my $klass   = blessed($object);
     my $refaddr = refaddr($object);
     if (exists $mocked->{$klass}->{$refaddr} && exists $mocked->{$klass}->{$refaddr}->{$method}) {
+        ++$counts->{$klass}->{$refaddr}->{$method};
         my $val = $mocked->{$klass}->{$refaddr}->{$method};
         ref($val) eq 'CODE' ? $val->($object, @rest) : $val;
     } else {
@@ -300,15 +313,17 @@ You can mock instance methods as well as class methods (this feature was provide
 
 See L</mock_guard> definition.
 
-=head2 called( $class_name, $method_name )
+=head2 called( $class_name_or_object, $method_name )
 
-Returns a number of calling of $method_name in $class_name.
+Returns a number of calling of $method_name in $class_name_or_object.
 
 =head1 AUTHOR
 
 Toru Yamaguchi E<lt>zigorou@cpan.orgE<gt>
 
 Yuji Shimada E<lt>xaicron at cpan.orgE<gt>
+
+Masaki Nakagawa E<lt>masaki@cpan.orgE<gt>
 
 =head1 THANKS TO
 

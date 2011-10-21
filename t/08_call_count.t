@@ -28,4 +28,20 @@ package main;
     }
 }
 
+{
+    # object
+    my $counts = { foo => 1, bar => 10, baz => 0 };
+    my $obj = Some::Class->new;
+    my $guard = mock_guard($obj => $counts);
+
+    for my $name (keys %$counts) {
+        my $count = $counts->{$name};
+        for (1..$count) {
+            is $obj->$name => $count;
+        }
+
+        is $guard->called($obj, $name) => $count;
+    }
+}
+
 done_testing;
