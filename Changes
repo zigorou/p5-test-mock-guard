@@ -1,5 +1,8 @@
 Revision history for Perl extension Test::Mock::Guard
 
+0.05    Fri Oct 28 13:51:03 2011
+        - Supports call_count() methods (thanks ikasam_a)
+
 0.04    Thu Sep  8 21:43:15 2011
         - Remove unary plus operator considering less than perl 5.8.x. (thanks chocolateboy)
 
