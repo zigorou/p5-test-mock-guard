@@ -1,5 +1,8 @@
 Revision history for Perl extension Test::Mock::Guard
 
+0.06    Fri Oct 28 13:58:16 2011
+        - fixed missing MANIFEST
+
 0.05    Fri Oct 28 13:51:03 2011
         - Supports call_count() methods (thanks ikasam_a)
 
