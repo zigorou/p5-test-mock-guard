@@ -151,24 +151,27 @@ package
 use Scalar::Util qw(blessed refaddr);
 
 my $mocked = {};
-my $counts = {};
 sub new {
     my ($class, $object, $methods) = @_;
     my $klass   = blessed($object);
     my $refaddr = refaddr($object);
 
+    my $methods_map = {};
     $mocked->{$klass}->{_mocked} ||= {};
     for my $method (keys %$methods) {
+        $methods_map->{$method} = {
+            method       => $methods->{$method},
+            called_count => 0,
+        };
         unless ($mocked->{$klass}->{_mocked}->{$method}) {
             $mocked->{$klass}->{_mocked}->{$method} = $klass->can($method);
             no strict 'refs';
             no warnings 'redefine';
             *{"$klass\::$method"} = sub { _mocked($method, @_) };
-            $counts->{$klass}->{$refaddr}->{$method} = 0;
         }
     }
 
-    $mocked->{$klass}->{$refaddr} = $methods;
+    $mocked->{$klass}->{$refaddr} = $methods_map;
     bless { object => $object }, $class;
 }
 
@@ -185,10 +188,10 @@ sub reset {
 
 sub call_count {
     my ($self, $method_name) = @_;
-    my $class_name = blessed $self->{object};
-    my $refaddr    = refaddr $self->{object};
-    return unless exists $counts->{$class_name}->{$refaddr}->{$method_name};
-    return $counts->{$class_name}->{$refaddr}->{$method_name};
+    my $klass   = blessed $self->{object};
+    my $refaddr = refaddr $self->{object};
+    return unless exists $mocked->{$klass}{$refaddr}{$method_name}{called_count};
+    return $mocked->{$klass}{$refaddr}{$method_name}{called_count};
 }
 
 sub _mocked {
@@ -196,8 +199,8 @@ sub _mocked {
     my $klass   = blessed($object);
     my $refaddr = refaddr($object);
     if (exists $mocked->{$klass}->{$refaddr} && exists $mocked->{$klass}->{$refaddr}->{$method}) {
-        ++$counts->{$klass}->{$refaddr}->{$method};
-        my $val = $mocked->{$klass}->{$refaddr}->{$method};
+        ++$mocked->{$klass}->{$refaddr}->{$method}->{called_count};
+        my $val = $mocked->{$klass}->{$refaddr}->{$method}->{method};
         ref($val) eq 'CODE' ? $val->($object, @rest) : $val;
     } else {
         $mocked->{$klass}->{_mocked}->{$method}->($object, @rest);
