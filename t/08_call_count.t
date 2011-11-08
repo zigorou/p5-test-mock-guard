@@ -2,7 +2,6 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Mock::Guard qw(mock_guard);
-use Test::Name::FromLine;
 
 package Some::Class;
 
