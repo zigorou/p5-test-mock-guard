@@ -48,7 +48,7 @@ sub new {
                 ? $method_defs->{$method_name}
                 : sub { $method_defs->{$method_name} };
             no strict 'refs';
-            no warnings 'redefine';
+            no warnings qw(redefine prototype);
             *{"$class_name\::$method_name"} = sub {
                 ++$stash->{$class_name}->{$method_name}->{called_count};
                 &$mocked_method;
@@ -129,7 +129,7 @@ sub _restore {
         }
 
         no strict 'refs';
-        no warnings 'redefine';
+        no warnings qw(redefine prototype);
         *{"$class_name\::$method_name"} = $orig_method
             || *{"$class_name\::$method_name is unregistered"}; # black magic!
     }
@@ -166,7 +166,7 @@ sub new {
         unless ($mocked->{$klass}->{_mocked}->{$method}) {
             $mocked->{$klass}->{_mocked}->{$method} = $klass->can($method);
             no strict 'refs';
-            no warnings 'redefine';
+            no warnings qw(redefine prototype);
             *{"$klass\::$method"} = sub { _mocked($method, @_) };
         }
     }
@@ -218,7 +218,7 @@ sub DESTROY {
         my $mocked = delete $mocked->{$klass}->{_mocked};
         for my $method (keys %$mocked) {
             no strict 'refs';
-            no warnings 'redefine';
+            no warnings qw(redefine prototype);
             *{"$klass\::$method"} = $mocked->{$method};
         }
     }
