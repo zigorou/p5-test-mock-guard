@@ -1,7 +1,10 @@
 Revision history for Perl extension Test::Mock::Guard
 
+0.07    Wed Nov 09 01:29:33 2011
+        - Fixed a problem that mocked instance doesn't keep call_count() (thanks xaicron)
+
 0.06    Fri Oct 28 13:58:16 2011
-        - fixed missing MANIFEST
+        - Fixed missing MANIFEST
 
 0.05    Fri Oct 28 13:51:03 2011
         - Supports call_count() methods (thanks ikasam_a)
@@ -10,9 +13,9 @@ Revision history for Perl extension Test::Mock::Guard
         - Remove unary plus operator considering less than perl 5.8.x. (thanks chocolateboy)
 
 0.03    Thu Sep  8 12:21:51 2011
-        - improve multiple same class mock guard (thanks xaicron)
-        - import Test::Mock::Guard::Instance (thanks cho45)
-        - add reset() method (thanks xaicron, nekokak)
+        - Improve multiple same class mock guard (thanks xaicron)
+        - Import Test::Mock::Guard::Instance (thanks cho45)
+        - Add reset() method (thanks xaicron, nekokak)
 
 0.02    Tue Mar  8 20:25:49 2011
-        - original version
+        - Original version
