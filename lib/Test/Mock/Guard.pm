@@ -7,7 +7,7 @@ use 5.006001;
 
 use Exporter qw(import);
 use Class::Load qw(load_class);
-use Scalar::Util qw(blessed refaddr);
+use Scalar::Util qw(blessed refaddr set_prototype);
 use List::Util qw(max);
 use Carp qw(croak);
 
@@ -47,12 +47,17 @@ sub new {
             my $mocked_method = ref $method_defs->{$method_name} eq 'CODE'
                 ? $method_defs->{$method_name}
                 : sub { $method_defs->{$method_name} };
+
+            my $fully_qualified_method_name = "$class_name\::$method_name";
+            my $prototype = prototype($fully_qualified_method_name);
+
             no strict 'refs';
-            no warnings qw(redefine prototype);
-            *{"$class_name\::$method_name"} = sub {
+            no warnings 'redefine';
+
+            *{$fully_qualified_method_name} = set_prototype(sub {
                 ++$stash->{$class_name}->{$method_name}->{called_count};
                 &$mocked_method;
-            };
+            }, $prototype);
         }
     }
     return bless { restore => $restore, object => $object } => $class;
