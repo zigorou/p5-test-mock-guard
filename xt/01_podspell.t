@@ -9,3 +9,7 @@ Toru Yamaguchi
 zigorou@cpan.org
 Test::Mock::Guard
 RAII
+Masaki Nakagawa
+Yuji Shimada
+cho45
+SYNOPSIS's
