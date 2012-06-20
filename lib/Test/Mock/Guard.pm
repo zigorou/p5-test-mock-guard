@@ -69,9 +69,10 @@ sub call_count {
     if (my $class_name = blessed $klass) {
         # object
         my $refaddr = refaddr $klass;
-        my $guard = $self->{object}->{"$class_name#$refaddr"};
+        my $guard = $self->{object}->{"$class_name#$refaddr"} || return undef;
         return $guard->call_count($method_name);
-    } else {
+    }
+    else {
         # class
         my $class_name = $klass;
         return unless exists $stash->{$class_name}->{$method_name};

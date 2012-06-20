@@ -56,4 +56,18 @@ package main;
     }
 }
 
+{
+
+    for (1..3) {
+        # not mocked object
+        my $obj = Some::Class->new;
+        my $counts = { foo => 1, bar => 10, baz => 0 };
+        my $guard = mock_guard('Some::Class' => $counts);
+
+        for my $name (keys %$counts) {
+            is $guard->call_count($obj, $name), undef;
+        }
+    }
+}
+
 done_testing;
