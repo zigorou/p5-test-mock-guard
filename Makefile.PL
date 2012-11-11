@@ -14,6 +14,7 @@ author_tests 'xt';
 
 test_requires 'Test::More' => 0.96;
 
-auto_set_repository;
-auto_include;
+repository 'https://github.com/zigorou/p5-test-mock-guard';
+bugtracker 'https://github.com/zigorou/p5-test-mock-guard/issues';
+
 WriteAll;
