@@ -1,5 +1,9 @@
 Revision history for Perl extension Test::Mock::Guard
 
+0.08    Tue Jul  3 22:14:44 2012
+        - Fixed a problem that when calling call_count() with un-mocked instance to throws exception. (xaicron)
+        - keep prototype (thnks Belden Lyman)
+
 0.07    Wed Nov 09 01:29:33 2011
         - Fixed a problem that mocked instance doesn't keep call_count() (thanks xaicron)
 

@@ -25,6 +25,7 @@ t/05_object.t
 t/06_mixied.t
 t/07_reset.t
 t/08_call_count.t
+t/09_prototypes.t
 xt/01_podspell.t
 xt/02_perlcritic.t
 xt/03_pod.t
