@@ -69,7 +69,8 @@ sub call_count {
     if (my $class_name = blessed $klass) {
         # object
         my $refaddr = refaddr $klass;
-        my $guard = $self->{object}->{"$class_name#$refaddr"} || return undef;
+        my $guard = $self->{object}->{"$class_name#$refaddr"}
+            || return undef; ## no critic
         return $guard->call_count($method_name);
     }
     else {
