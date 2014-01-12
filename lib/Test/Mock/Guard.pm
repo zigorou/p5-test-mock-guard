@@ -206,7 +206,7 @@ sub _mocked {
     my ($method, $original, $object, @rest) = @_;
     my $klass   = blessed($object);
     my $refaddr = refaddr($object);
-    if (exists $mocked->{$klass}->{$refaddr} && exists $mocked->{$klass}->{$refaddr}->{$method}) {
+    if ($klass && $refaddr && exists $mocked->{$klass}->{$refaddr} && exists $mocked->{$klass}->{$refaddr}->{$method}) {
         ++$mocked->{$klass}->{$refaddr}->{$method}->{called_count};
         my $val = $mocked->{$klass}->{$refaddr}->{$method}->{method};
         ref($val) eq 'CODE' ? $val->($object, @rest) : $val;
