@@ -171,10 +171,11 @@ sub new {
             called_count => 0,
         };
         unless ($mocked->{$klass}->{_mocked}->{$method}) {
-            $mocked->{$klass}->{_mocked}->{$method} = $klass->can($method);
+            my $original_method = $klass->can($method);
+            $mocked->{$klass}->{_mocked}->{$method} = $original_method;
             no strict 'refs';
             no warnings qw(redefine prototype);
-            *{"$klass\::$method"} = sub { _mocked($method, @_) };
+            *{"$klass\::$method"} = sub { _mocked($method, $original_method, @_) };
         }
     }
 
@@ -202,7 +203,7 @@ sub call_count {
 }
 
 sub _mocked {
-    my ($method, $object, @rest) = @_;
+    my ($method, $original, $object, @rest) = @_;
     my $klass   = blessed($object);
     my $refaddr = refaddr($object);
     if (exists $mocked->{$klass}->{$refaddr} && exists $mocked->{$klass}->{$refaddr}->{$method}) {
@@ -210,7 +211,7 @@ sub _mocked {
         my $val = $mocked->{$klass}->{$refaddr}->{$method}->{method};
         ref($val) eq 'CODE' ? $val->($object, @rest) : $val;
     } else {
-        $mocked->{$klass}->{_mocked}->{$method}->($object, @rest);
+        $original->($object, @rest);
     }
 }
 
