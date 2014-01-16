@@ -2,12 +2,15 @@ Revision history for Perl extension Test::Mock::Guard
 
 {{$NEXT}}
 
+0.10 2014-01-16T08:58:33Z
+        - Supports `Some::Class::foo($obj)` pattern (thanks hitode909)
+
 0.09    Mon Nov 12 00:46:03 2012
         - repacking (no code changes)
 
 0.08    Tue Jul  3 22:14:44 2012
         - Fixed a problem that when calling call_count() with un-mocked instance to throws exception. (xaicron)
-        - keep prototype (thnks Belden Lyman)
+        - keep prototype (thanks Belden Lyman)
 
 0.07    Wed Nov 09 01:29:33 2011
         - Fixed a problem that mocked instance doesn't keep call_count() (thanks xaicron)
