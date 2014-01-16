@@ -10,3 +10,11 @@ MANIFEST
 MANIFEST.bak
 MYMETA.*
 *.sw[po]
+/Test-Mock-Guard-*
+/.build
+/_build_params
+/Build
+/Build.bat
+!Build/
+!META.json
+!LICENSE
